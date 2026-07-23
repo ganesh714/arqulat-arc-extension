@@ -1,0 +1,82 @@
+{
+  "name": "arqulat-arc-extension",
+  "displayName": "Arqulat Arc",
+  "description": "One-Click Architecture Mapper — works with any VS Code chat agent",
+  "version": "0.2.0",
+  "publisher": "arqulat",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Visualization",
+    "Machine Learning",
+    "Other"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onView:arqulat-sidebar"
+  ],
+  "contributes": {
+    "markdown.markdownItPlugins": true,
+    "configuration": {
+      "title": "Arqulat Arc",
+      "properties": {
+        "arqulat.mermaidCompiler.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use Arqulat Arc's native interactive diagram renderer for Mermaid code blocks in Markdown previews. Falls back to default SVG for unsupported types."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "arqulat.generateArchitecture",
+        "title": "Arqulat: Map Architecture"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "arqulat-sidebar-container",
+          "title": "Arqulat Arc",
+          "icon": "media/sidebar-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "arqulat-sidebar-container": [
+        {
+          "type": "webview",
+          "id": "arqulat-sidebar",
+          "name": "Architecture Mapper"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run build-ext && npm run build-webview",
+    "watch": "npm-run-all -p watch-*",
+    "watch-ext": "node esbuild.js --watch",
+    "watch-webview": "cd webview-ui && npm run watch",
+    "build-ext": "node esbuild.js",
+    "build-webview": "cd webview-ui && npm run build",
+    "package": "npm run build-ext && npm run build-webview",
+    "check-types": "tsc --noEmit",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/dagre": "^0.7.54",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^7.11.0",
+    "@typescript-eslint/parser": "^7.11.0",
+    "esbuild": "^0.21.5",
+    "eslint": "^8.57.0",
+    "npm-run-all": "^4.1.5",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "dagre": "^0.8.5"
+  }
+}
