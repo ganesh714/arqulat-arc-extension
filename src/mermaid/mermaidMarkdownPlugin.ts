@@ -9,18 +9,28 @@ export function activate(context: vscode.ExtensionContext) {
 
       md.renderer.rules.fence = (tokens: any, idx: number, options: any, env: any, self: any) => {
         const token = tokens[idx];
-        const isMermaid = token.info.trim().toLowerCase() === 'mermaid';
+        const lang = token.info.trim().toLowerCase();
+        const isMermaid = lang === 'mermaid';
+        const isArqulatArc = lang === 'arqulat-arc';
 
-        if (isMermaid) {
+        if (isMermaid || isArqulatArc) {
           const config = vscode.workspace.getConfiguration('arqulat');
           const isCompilerEnabled = config.get<boolean>('mermaidCompiler.enabled', false);
 
-          if (isCompilerEnabled) {
+          if (isCompilerEnabled || isArqulatArc) {
             try {
               const code = token.content;
 
+              if (isArqulatArc) {
+                const parsed = JSON.parse(code);
+                // The new native format uses a "nodes" array directly
+                if (parsed.nodes && Array.isArray(parsed.nodes)) {
+                  return renderDiagramHtml(parsed.nodes);
+                }
+              }
+
               // Check if it's a supported type (flowchart, class, state, er, mindmap)
-              if (isSupportedMermaidType(code)) {
+              if (isMermaid && isSupportedMermaidType(code)) {
                 const parsedNodes = parseMermaid(code);
                 
                 if (parsedNodes) {

@@ -30,9 +30,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
         const agents = this._detectInstalledAgents();
         webviewView.webview.postMessage({ type: 'agents', value: agents });
       } else if (data.type === 'generate') {
-        await this._sendInstructionToAgent(data.agentName, 'architecture');
+        await this._sendInstructionToAgent(data.agentName, 'architecture', data.customPrompt);
       } else if (data.type === 'generateDiagram') {
-        await this._sendInstructionToAgent(data.agentName, 'diagram');
+        await this._sendInstructionToAgent(data.agentName, 'diagram', data.customPrompt);
       } else if (data.type === 'toggleMermaid') {
         await this._toggleMermaidCompiler();
       }
@@ -140,13 +140,13 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
    * Builds the full instruction prompt and sends it to the selected agent's chat.
    * Handles real chat participants (@mention routing) vs known extensions (no @mention).
    */
-  private async _sendInstructionToAgent(agentName: string, mode: 'architecture' | 'diagram') {
+  private async _sendInstructionToAgent(agentName: string, mode: 'architecture' | 'diagram', customPrompt: string = '') {
     let instruction = '';
 
     if (mode === 'architecture') {
-      instruction = this._buildArchitectureInstruction();
+      instruction = this._buildArchitectureInstruction(customPrompt);
     } else {
-      instruction = this._buildDiagramInstruction();
+      instruction = this._buildDiagramInstruction(customPrompt);
     }
 
     // Find the agent to check if it's a real participant
@@ -242,12 +242,11 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
   }
 
   /**
-   * Builds the comprehensive architecture mapping instruction.
-   * This is what gets sent to the selected agent.
+   * Builds the architecture exploration instruction.
    */
-  private _buildArchitectureInstruction(): string {
-    return [
-      `I need you to analyze this project's architecture and generate a diagram specification in JSON format.`,
+  private _buildArchitectureInstruction(customPrompt: string = ''): string {
+    const prompt = [
+      `I want to understand the architecture of this project. Please explore the workspace and provide a comprehensive architecture overview in JSON format.`,
       ``,
       `Follow these steps carefully:`,
       ``,
@@ -266,73 +265,111 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       `- Natural groupings/layers (Client layer, Server layer, Data layer, External Services)`,
       ``,
       `**STEP 3: OUTPUT THE ARCHITECTURE AS JSON**`,
-      `Output the complete architecture inside <RESULT> tags as this exact JSON format:`,
+      `Create a new markdown file (e.g., "architecture.md") and save it to the workspace.`,
+      `Write the diagram specification inside that file using a standard markdown code block with "arqulat-arc" as the language.`,
       ``,
-      `<RESULT>`,
+      `Format for the code block:`,
+      `\`\`\`arqulat-arc`,
       `{`,
-      `  "entities": [`,
-      `    { "name": "ComponentName", "role": "brief description", "type": "box|database|cloud|server|pill" }`,
-      `  ],`,
-      `  "relationships": [`,
-      `    { "from": "ComponentA", "to": "ComponentB", "label": "REST API", "type": "calls" }`,
-      `  ],`,
-      `  "groups": ["Frontend", "Backend", "Database"],`,
-      `  "entityToGroup": { "ComponentA": "Frontend", "ComponentB": "Backend" },`,
-      `  "layout": {`,
-      `    "positions": [`,
-      `      { "entity": "ComponentA", "row": 0, "col": 0 }`,
-      `    ],`,
-      `    "gridMetrics": { "columnWidth": 280, "rowHeight": 140 },`,
-      `    "nodeDefaults": { "width": 200, "height": 80 }`,
-      `  },`,
-      `  "toolCalls": [`,
-      `    { "tool": "add_node", "args": { "type": "box", "content": "ComponentA", "x": 0, "y": 0, "width": 200, "height": 80, "backgroundColor": "#2d2d2d", "borderColor": "#555", "textColor": "#fff" } },`,
-      `    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_0$$", "targetId": "$$NEW_1$$", "label": "REST", "routing": "elbow", "arrowHead": "filled" } }`,
+      `  "version": "1.0",`,
+      `  "nodes": [`,
+      `    {`,
+      `      "id": "node_0",`,
+      `      "type": "box",`,
+      `      "content": "ComponentName",`,
+      `      "position": { "x": 0, "y": 0 },`,
+      `      "dimensions": { "width": 200, "height": 80 },`,
+      `      "style": { "backgroundColor": "#2d2d2d", "borderColor": "#555", "color": "#fff" }`,
+      `    },`,
+      `    {`,
+      `      "id": "edge_0",`,
+      `      "type": "arrow",`,
+      `      "content": "",`,
+      `      "position": { "x": 0, "y": 0 },`,
+      `      "dimensions": { "width": 0, "height": 0 },`,
+      `      "startConnection": { "nodeId": "node_0", "anchor": "center" },`,
+      `      "endConnection": { "nodeId": "node_1", "anchor": "center" },`,
+      `      "label": "REST API",`,
+      `      "routing": "elbow",`,
+      `      "arrowHead": "filled"`,
+      `    }`,
       `  ]`,
       `}`,
-      `</RESULT>`,
+      `\`\`\``,
       ``,
       `CRITICAL RULES:`,
       `- EXPLORE the actual project files before generating — do NOT guess the architecture`,
-      `- Every entity MUST have a non-empty "content" field`,
-      `- Every relationship MUST have a corresponding connect_nodes in toolCalls`,
-      `- Use $$NEW_N$$ placeholders ($$NEW_0$$, $$NEW_1$$, etc.) to reference nodes created in the toolCalls array`,
-      `- Calculate positions: x = col * columnWidth, y = row * rowHeight`,
+      `- Every node MUST have a non-empty "content" field`,
+      `- Calculate positions using a grid: x = col * 280, y = row * 140`,
+      `- Nodes that represent components must have a unique id (e.g. "node_0", "node_1")`,
+      `- Nodes that represent connections must have startConnection and endConnection referencing those ids`,
       `- Use appropriate node types: box (services), database (DB), cloud (external), server (backend), pill (start/end)`,
-      `- Use colors that make logical sense (group related components with similar colors)`,
-    ].join('\n');
+      `- Use colors that make logical sense (group related components with similar colors)`
+    ];
+
+    if (customPrompt.trim()) {
+      prompt.push(``, `User's specific request: ${customPrompt.trim()}`);
+    }
+
+    return prompt.join('\n');
   }
 
   /**
    * Builds the diagram generation instruction for custom descriptions.
    */
-  private _buildDiagramInstruction(): string {
-    return [
+  private _buildDiagramInstruction(customPrompt: string = ''): string {
+    const prompt = [
       `I need you to generate a diagram. The user will describe what they want.`,
       ``,
-      `Analyze the description and output the diagram specification inside <RESULT> tags as JSON with this format:`,
+      `Create a new markdown file (e.g., "diagram.md") and save it to the workspace.`,
+      `Write the diagram specification inside that file using a standard markdown code block with "arqulat-arc" as the language.`,
       ``,
-      `<RESULT>`,
+      `Format for the code block:`,
+      `\`\`\`arqulat-arc`,
       `{`,
-      `  "entities": [ { "name": "...", "role": "...", "type": "box|diamond|pill|database|cloud" } ],`,
-      `  "relationships": [ { "from": "...", "to": "...", "label": "...", "type": "..." } ],`,
-      `  "toolCalls": [`,
-      `    { "tool": "add_node", "args": { "type": "...", "content": "...", "x": 0, "y": 0, "width": 160, "height": 60, "backgroundColor": "#hex", "borderColor": "#hex", "textColor": "#hex" } },`,
-      `    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_0$$", "targetId": "$$NEW_1$$", "label": "...", "routing": "elbow", "arrowHead": "filled" } }`,
+      `  "version": "1.0",`,
+      `  "nodes": [`,
+      `    {`,
+      `      "id": "node_0",`,
+      `      "type": "box",`,
+      `      "content": "ComponentName",`,
+      `      "position": { "x": 0, "y": 0 },`,
+      `      "dimensions": { "width": 200, "height": 80 },`,
+      `      "style": { "backgroundColor": "#2d2d2d", "borderColor": "#555", "color": "#fff" }`,
+      `    },`,
+      `    {`,
+      `      "id": "edge_0",`,
+      `      "type": "arrow",`,
+      `      "content": "",`,
+      `      "position": { "x": 0, "y": 0 },`,
+      `      "dimensions": { "width": 0, "height": 0 },`,
+      `      "startConnection": { "nodeId": "node_0", "anchor": "center" },`,
+      `      "endConnection": { "nodeId": "node_1", "anchor": "center" },`,
+      `      "label": "REST API",`,
+      `      "routing": "elbow",`,
+      `      "arrowHead": "filled"`,
+      `    }`,
       `  ]`,
       `}`,
-      `</RESULT>`,
+      `\`\`\``,
       ``,
       `Rules:`,
       `- Decision/condition nodes use type "diamond"`,
       `- Start/End nodes use type "pill"`,
       `- Process/action nodes use type "box"`,
       `- Database/storage use type "database"`,
-      `- Use $$NEW_N$$ placeholders for node references in connect_nodes`,
-      `- Calculate positions using a grid: x = col * 240, y = row * 120`,
-      ``,
-      `Now please generate the diagram for: `,
-    ].join('\n');
+      `- Nodes that represent components must have a unique id (e.g. "node_0", "node_1")`,
+      `- Nodes that represent connections must have startConnection and endConnection referencing those ids`,
+      `- Calculate positions using a grid: x = col * 280, y = row * 140`
+    ];
+
+    if (customPrompt.trim()) {
+      prompt.push(``, `Now please generate the diagram for: ${customPrompt.trim()}`);
+    } else {
+      prompt.push(``, `Now please generate the diagram based on the current context.`);
+    }
+
+    return prompt.join('\n');
   }
 
   private _getHtmlForWebview() {
@@ -577,6 +614,29 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       pointer-events: none;
     }
 
+    /* ─── Textarea ─── */
+    textarea {
+      width: 100%;
+      background: var(--vscode-input-background);
+      color: var(--vscode-input-foreground);
+      border: 1px solid var(--vscode-input-border, var(--arc-card-border));
+      border-radius: 4px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 56px;
+      margin-bottom: 8px;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--arc-accent);
+    }
+    textarea::placeholder {
+      color: var(--vscode-input-placeholderForeground);
+      opacity: 0.7;
+    }
+
     /* ─── Agent Info ─── */
     .agent-status {
       display: flex;
@@ -738,19 +798,27 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
           Actions
         </span>
       </div>
+      
       <div class="action-group">
         <button class="btn btn-primary" id="mapBtn">
           <span class="btn-icon">⊞</span>
-          Map Architecture
+          Auto-Map Workspace
         </button>
+        <p class="hint" style="margin-bottom: 8px;">
+          Scans your entire project automatically to generate a macro-level system architecture diagram.
+        </p>
+
+        <div style="height: 1px; background: var(--arc-card-border); margin: 8px 0;"></div>
+
+        <textarea id="customPrompt" placeholder="Required: What kind of diagram do you want? (e.g. 'Show me the auth flow', 'Draw the database schema')"></textarea>
         <button class="btn btn-outline" id="diagramBtn">
           <span class="btn-icon">◇</span>
-          Create Diagram
+          Generate Custom Diagram
         </button>
+        <p class="hint" style="margin-top: 8px;">
+          Generates a focused diagram based on your instructions and current open file.
+        </p>
       </div>
-      <p class="hint" style="margin-top: 8px;">
-        Sends step-by-step instructions to the selected agent to explore your project and generate diagrams.
-      </p>
     </div>
 
   </div>
@@ -792,12 +860,24 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     // Action buttons
     document.getElementById('mapBtn').addEventListener('click', () => {
       if (selectedAgent === undefined || selectedAgent === null) return;
-      vscode.postMessage({ type: 'generate', agentName: selectedAgent });
+      // Auto-Map doesn't strictly need a prompt, but we'll send it if they typed something
+      const customPrompt = document.getElementById('customPrompt').value;
+      vscode.postMessage({ type: 'generate', agentName: selectedAgent, customPrompt });
     });
 
     document.getElementById('diagramBtn').addEventListener('click', () => {
       if (selectedAgent === undefined || selectedAgent === null) return;
-      vscode.postMessage({ type: 'generateDiagram', agentName: selectedAgent });
+      const customPrompt = document.getElementById('customPrompt').value;
+      
+      if (!customPrompt.trim()) {
+        const ta = document.getElementById('customPrompt');
+        ta.style.borderColor = 'var(--vscode-errorForeground)';
+        ta.placeholder = 'Please enter instructions for the diagram here first!';
+        setTimeout(() => ta.style.borderColor = '', 2000);
+        return;
+      }
+
+      vscode.postMessage({ type: 'generateDiagram', agentName: selectedAgent, customPrompt });
     });
 
     function updateAgentInfo() {
