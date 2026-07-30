@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { parseMermaid, isSupportedMermaidType } from './mermaidParser';
 import { renderDiagramHtml } from './diagramRenderer';
+import { autoLayoutNodes } from './layoutEngine';
 
 export function activate(context: vscode.ExtensionContext) {
   return {
@@ -25,7 +26,8 @@ export function activate(context: vscode.ExtensionContext) {
                 const parsed = JSON.parse(code);
                 // The new native format uses a "nodes" array directly
                 if (parsed.nodes && Array.isArray(parsed.nodes)) {
-                  return renderDiagramHtml(parsed.nodes);
+                  const layoutedNodes = autoLayoutNodes(parsed.nodes);
+                  return renderDiagramHtml(layoutedNodes);
                 }
               }
 
