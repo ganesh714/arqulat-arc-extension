@@ -19,13 +19,29 @@ export class CanvasApplicator {
         if (tool === 'add_node') {
           const id = createUuid();
           newNodesMap.set(`$$NEW_${tempIdCounter++}$$`, id);
+          const nodeType = mapNodeTypeAlias(args.type || 'box');
+          const content = args.content || '';
+          const charCount = content.length;
+
+          let baseW = 160, baseH = 60;
+          if (nodeType === 'pill' || nodeType === 'terminator') { baseW = 130; baseH = 50; }
+          else if (nodeType === 'diamond') { baseW = 160; baseH = 80; }
+
+          const calcW = Math.max(baseW, Math.min(280, charCount * 8 + 40));
+          const lines = Math.max(1, Math.ceil((charCount * 8) / Math.max(1, calcW - 40)));
+          const calcH = Math.max(baseH, lines * 20 + 40);
+
+          let w = args.width || calcW;
+          let h = args.height || calcH;
+          if ((w === 160 && h === 60) || (w === 220 && h === 90)) { w = calcW; h = calcH; }
+
           const newNode: DiagramNode = {
             id,
-            type: mapNodeTypeAlias(args.type || 'box'),
-            content: args.content || '',
+            type: nodeType,
+            content,
             tag: args.tag,
             position: { x: args.x || 0, y: args.y || 0 },
-            dimensions: { width: args.width || 220, height: args.height || 90 },
+            dimensions: { width: Math.round(w), height: Math.round(h) },
             style: {
               ...(args.backgroundColor && { backgroundColor: args.backgroundColor }),
               ...(args.borderColor && { borderColor: args.borderColor }),

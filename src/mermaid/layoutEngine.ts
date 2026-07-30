@@ -5,9 +5,37 @@
 import dagre from 'dagre';
 import type { DiagramNode } from '../types';
 
+/** Calculate smart dimensions based on node type and content length */
+function getSmartDimensions(node: DiagramNode): { width: number; height: number } {
+  if (node.dimensions?.width && node.dimensions?.height &&
+      !(node.dimensions.width === 220 && node.dimensions.height === 90)) {
+    return { width: node.dimensions.width, height: node.dimensions.height };
+  }
+
+  const content = node.content || '';
+  const charCount = content.length;
+
+  let baseWidth = 160;
+  let baseHeight = 60;
+
+  if (node.type === 'pill' || node.type === 'terminator') {
+    baseWidth = 130;
+    baseHeight = 50;
+  } else if (node.type === 'diamond' || node.type === 'circle') {
+    baseWidth = 160;
+    baseHeight = 80;
+  }
+
+  const calcWidth = Math.max(baseWidth, Math.min(280, charCount * 8 + 40));
+  const lines = Math.max(1, Math.ceil((charCount * 8) / Math.max(1, calcWidth - 40)));
+  const calcHeight = Math.max(baseHeight, lines * 20 + 40);
+
+  return { width: Math.round(calcWidth), height: Math.round(calcHeight) };
+}
+
 export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'TB', ranksep: 180, nodesep: 150 });
+  g.setGraph({ rankdir: 'TB', ranksep: 80, nodesep: 100 });
   g.setDefaultEdgeLabel(() => ({}));
 
   const isEdge = (n: DiagramNode) => ['arrow', 'line', 'custom-connector'].includes(n.type);
@@ -16,20 +44,8 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   const edges = nodes.filter(n => isEdge(n));
 
   realNodes.forEach(node => {
-    let defaultWidth = 220;
-    let defaultHeight = 90;
-    if (node.type === 'diamond' || node.type === 'circle') {
-      defaultWidth = 140;
-      defaultHeight = 140;
-    } else if (node.type === 'terminator') {
-      defaultWidth = 160;
-      defaultHeight = 70;
-    }
-
-    g.setNode(node.id, {
-      width: node.dimensions?.width || defaultWidth,
-      height: node.dimensions?.height || defaultHeight
-    });
+    const { width, height } = getSmartDimensions(node);
+    g.setNode(node.id, { width, height });
   });
 
   const outgoingEdges = new Map<string, DiagramNode[]>();
@@ -204,16 +220,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
     if (!isEdge(node)) {
       const dagreNode = g.node(node.id);
       if (dagreNode) {
-        let defaultWidth = 220;
-        let defaultHeight = 90;
-        if (node.type === 'diamond' || node.type === 'circle') {
-          defaultWidth = 140; defaultHeight = 140;
-        } else if (node.type === 'terminator') {
-          defaultWidth = 160; defaultHeight = 70;
-        }
-
-        const width = node.dimensions?.width || defaultWidth;
-        const height = node.dimensions?.height || defaultHeight;
+        const { width, height } = getSmartDimensions(node);
 
         return {
           ...node,
