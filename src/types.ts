@@ -42,16 +42,25 @@ export interface DiagramNode {
   position: { x: number; y: number };
   dimensions: { width: number; height: number };
   style?: Record<string, string>;
+  rotation?: number;
+  // Edge connection points (calculated by layout engine)
+  startPoint?: { x: number; y: number };
+  endPoint?: { x: number; y: number };
   // Connection (for edges)
   startConnection?: { nodeId: string; anchor: string };
   endConnection?: { nodeId: string; anchor: string };
   // Edge properties
   label?: string;
+  labelPosition?: 'mid' | 'start' | 'end';
   lineStyle?: string;
+  lineCurve?: 'straight' | 'curved';
   arrowHead?: ArrowHeadType | string;
   arrowTail?: ArrowHeadType | string;
   arrowType?: string;
   routing?: string;
+  waypoints?: { x: number; y: number }[];
+  points?: { x: number; y: number }[];
+  customConnectorStyle?: Record<string, string | number>;
   // Node metadata
   tag?: string;
   groupId?: string;
