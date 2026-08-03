@@ -23,7 +23,7 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri]
     };
 
-    webviewView.webview.html = this._getHtmlForWebview();
+    webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
     webviewView.webview.onDidReceiveMessage(async (data) => {
       if (data.type === 'refreshAgents') {
@@ -373,9 +373,14 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
     return prompt.join('\n');
   }
 
-  private _getHtmlForWebview() {
+  private _getHtmlForWebview(webview?: vscode.Webview) {
     const config = vscode.workspace.getConfiguration('arqulat');
     const isMermaidCompilerEnabled = config.get<boolean>('mermaidCompiler.enabled', false);
+
+    // Generate a secure webview URI for the logo image
+    const iconUri = webview
+      ? webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'icon.png'))
+      : '';
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -420,14 +425,15 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
       background: var(--arc-card-bg);
     }
     .header-icon {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       border-radius: 6px;
-      background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+      background: #1a1a2e;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
       color: #fff;
       font-weight: 700;
       flex-shrink: 0;
@@ -735,7 +741,9 @@ export class SidebarProvider implements vscode.WebviewViewProvider {
 
   <!-- Header -->
   <div class="header">
-    <div class="header-icon">A</div>
+    <div class="header-icon">
+      <img src="${iconUri}" width="32" height="32" style="object-fit: contain; display: block;" alt="Arqulat Arc" />
+    </div>
     <div class="header-text">
       <div class="header-title">Arqulat Arc</div>
       <div class="header-subtitle">Visual Architecture Layer</div>
