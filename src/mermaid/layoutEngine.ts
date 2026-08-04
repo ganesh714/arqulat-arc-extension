@@ -21,7 +21,7 @@ function getSmartDimensions(node: DiagramNode): { width: number; height: number 
   let baseWidth = 160;
   let baseHeight = 60;
 
-  if (node.type === 'pill' || node.type === 'terminator') {
+  if (node.type === 'pill' || node.type === 'terminator' || node.type === 'rectangle') {
     baseWidth = 130;
     baseHeight = 50;
   } else if (node.type === 'diamond' || node.type === 'circle') {
@@ -66,11 +66,11 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
       let weight = 1;
       const labelLower = (edge.label || '').toLowerCase();
       const sourceNode = nodes.find(n => n.id === edge.startConnection!.nodeId);
-      
+
       if (sourceNode?.type === 'diamond' || sourceNode?.type === 'decision-merge') {
         const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
         const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
-        
+
         let isYes = false;
         if (labelLower === 'yes' || labelLower === 'true') {
           isYes = true;
@@ -91,7 +91,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
         // Undirected line edges (---) should stay on the main spine with high weight
         weight = 80;
       }
-      
+
       g.setEdge(edge.startConnection.nodeId, edge.endConnection.nodeId, { minlen, weight });
     }
   });
@@ -101,11 +101,11 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   // Orthogonal Flowchart Post-pass: force strict alignment for diamond branches
   const mainSpine = new Set<string>();
   const graphRoots = nodes.filter(n => !edges.some(e => e.endConnection?.nodeId === n.id));
-  
+
   const traverseSpine = (nodeId: string) => {
     if (mainSpine.has(nodeId)) return;
     mainSpine.add(nodeId);
-    
+
     const outEdges = outgoingEdges.get(nodeId) || [];
     outEdges.forEach(e => {
       const labelLower = (e.label || '').toLowerCase();
@@ -135,11 +135,11 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
       const gSource = g.node(sourceId);
       const gTarget = g.node(targetId);
       const labelLower = (edge.label || '').toLowerCase();
-      
+
       if ((sourceNode?.type === 'diamond' || sourceNode?.type === 'decision-merge') && gSource && gTarget) {
         const sourceEdges = outgoingEdges.get(sourceId) || [];
         const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === edge.id;
-        
+
         let isYes = false;
         if (labelLower === 'yes' || labelLower === 'true') {
           isYes = true;
@@ -148,30 +148,30 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
         } else {
           isYes = isSecondEdge;
         }
-        
+
         if (isYes) {
           const oldX = gTarget.x;
           const oldY = gTarget.y;
-          
+
           // Force horizontal alignment (same Y) and space out to the right
           gTarget.y = gSource.y;
           gTarget.x = gSource.x + (gSource.width / 2) + 120 + (gTarget.width / 2);
-          
+
           const dx = gTarget.x - oldX;
           const dy = gTarget.y - oldY;
-          
+
           if (dx !== 0 || dy !== 0) {
             const visited = new Set<string>();
             const shiftSubTree = (nodeId: string) => {
               if (visited.has(nodeId) || mainSpine.has(nodeId)) return;
               visited.add(nodeId);
-              
+
               const gn = g.node(nodeId);
               if (gn) {
                 gn.x += dx;
                 gn.y += dy;
               }
-              
+
               const outEdges = outgoingEdges.get(nodeId) || [];
               outEdges.forEach(e => {
                 if (e.endConnection?.nodeId) {
@@ -179,7 +179,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
                 }
               });
             };
-            
+
             const targetOutEdges = outgoingEdges.get(targetId) || [];
             targetOutEdges.forEach(e => {
               if (e.endConnection?.nodeId) {
@@ -214,7 +214,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
   // Dagre may drift the target node sideways even with high weight; this fixes it explicitly.
   edges.forEach(edge => {
     if (edge.type === 'line' && edge.arrowType === 'none' &&
-        edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
+      edge.startConnection?.nodeId && edge.endConnection?.nodeId) {
       const gSource = g.node(edge.startConnection.nodeId);
       const gTarget = g.node(edge.endConnection.nodeId);
       if (gSource && gTarget) {
@@ -262,11 +262,11 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
 
           // Automatically calculate anchor points
           const labelLower = (node.label || '').toLowerCase();
-          
+
           if (sourceNode.type === 'diamond' || sourceNode.type === 'decision-merge') {
             const sourceEdges = outgoingEdges.get(sourceNode.id) || [];
             const isSecondEdge = sourceEdges.length > 1 && sourceEdges[1].id === node.id;
-            
+
             let isYes = false;
             if (labelLower === 'yes' || labelLower === 'true') {
               isYes = true;
@@ -275,7 +275,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
             } else {
               isYes = isSecondEdge;
             }
-            
+
             if (isYes) {
               node.startConnection.anchor = 'right';
               node.endConnection.anchor = 'left';
@@ -300,7 +300,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
               y: sourceNode.position.y + sourceNode.dimensions.height
             };
           }
-          
+
           if (node.endConnection.anchor === 'left') {
             node.endPoint = {
               x: targetNode.position.x,
@@ -314,7 +314,7 @@ export function autoLayoutNodes(nodes: DiagramNode[]): DiagramNode[] {
           }
         }
       }
-      
+
       // Calculate bounding box so Rnd in Node.tsx doesn't crash on undefined dimensions
       node.position = {
         x: Math.min(node.startPoint.x, node.endPoint.x),
