@@ -128,10 +128,10 @@ export const EXECUTE_PROMPT =
   '  "explanation": "Creating nodes and connectors for conditional flow",\n' +
   '  "isDone": true,\n' +
   '  "toolCalls": [\n' +
-  '    { "tool": "add_node", "args": { "type": "pill", "content": "Start", "x": 0, "y": 0, "width": 160, "height": 60, "backgroundColor": "#E8F5E9", "borderColor": "#43A047" } },\n' +
+  '    { "tool": "add_node", "args": { "type": "pill", "content": "Start", "x": 0, "y": 0, "width": 130, "height": 50, "backgroundColor": "#E8F5E9", "borderColor": "#43A047" } },\n' +
   '    { "tool": "add_node", "args": { "type": "diamond", "content": "Condition?", "x": 0, "y": 120, "width": 160, "height": 60, "backgroundColor": "#FFF3E0", "borderColor": "#E65100" } },\n' +
   '    { "tool": "add_node", "args": { "type": "box", "content": "Action", "x": 240, "y": 120, "width": 160, "height": 60 } },\n' +
-  '    { "tool": "add_node", "args": { "type": "pill", "content": "End", "x": 0, "y": 240, "width": 160, "height": 60 } },\n' +
+  '    { "tool": "add_node", "args": { "type": "pill", "content": "End", "x": 0, "y": 240, "width": 130, "height": 50 } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_0$$", "targetId": "$$NEW_1$$", "routing": "elbow", "arrowHead": "filled" } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_1$$", "targetId": "$$NEW_2$$", "label": "True", "routing": "elbow", "arrowHead": "filled" } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_2$$", "targetId": "$$NEW_3$$", "routing": "elbow", "arrowHead": "filled" } },\n' +

@@ -24,7 +24,7 @@ export class CanvasApplicator {
           const charCount = content.length;
 
           let baseW = 160, baseH = 60;
-          if (nodeType === 'pill' || nodeType === 'terminator') { baseW = 130; baseH = 50; }
+          if (nodeType === 'pill' || nodeType === 'terminator' || nodeType === 'rectangle') { baseW = 130; baseH = 50; }
           else if (nodeType === 'diamond') { baseW = 160; baseH = 80; }
 
           const calcW = Math.max(baseW, Math.min(280, charCount * 8 + 40));
@@ -33,7 +33,7 @@ export class CanvasApplicator {
 
           let w = args.width || calcW;
           let h = args.height || calcH;
-          if ((w === 160 && h === 60) || (w === 220 && h === 90)) { w = calcW; h = calcH; }
+          if ((w === 160 && h === 60) || (w === 220 && h === 90) || (w === 150 && h === 60) || (w === 130 && h === 50) || (w === 160 && h === 80) || (w === 200 && h === 80)) { w = calcW; h = calcH; }
 
           const newNode: DiagramNode = {
             id,
