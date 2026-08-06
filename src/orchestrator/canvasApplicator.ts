@@ -29,7 +29,9 @@ export class CanvasApplicator {
 
           const calcW = Math.max(baseW, Math.min(280, charCount * 8 + 40));
           const lines = Math.max(1, Math.ceil((charCount * 8) / Math.max(1, calcW - 40)));
-          const calcH = Math.max(baseH, lines * 20 + 40);
+          let verticalPadding = baseH - 20;
+          if (verticalPadding < 10) verticalPadding = 20;
+          const calcH = Math.max(baseH, lines * 20 + verticalPadding);
 
           let w = args.width || calcW;
           let h = args.height || calcH;
@@ -55,6 +57,9 @@ export class CanvasApplicator {
           const id = createUuid();
           newNodesMap.set(`$$NEW_${tempIdCounter++}$$`, id);
 
+          const subtleShades = ["#37474F", "#455A64", "#546E7A", "#607D8B"];
+          const shade = subtleShades[Math.floor(Math.random() * subtleShades.length)];
+
           const edgeNode: DiagramNode = {
             id,
             type: 'arrow',
@@ -66,7 +71,10 @@ export class CanvasApplicator {
             label: args.label || '',
             lineStyle: args.lineStyle || 'solid',
             arrowHead: args.arrowHead || 'filled',
-            routing: args.routing || 'elbow'
+            routing: args.routing || 'elbow',
+            style: {
+              borderColor: shade
+            }
           };
           nodes.push(edgeNode);
         } else if (tool === 'group_nodes') {

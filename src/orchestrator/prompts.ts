@@ -24,7 +24,13 @@ export const SEMANTIC_PROMPT =
   "NODE SHAPE HINTS (use in the 'role' field):\n" +
   "- Conditions/decisions -> role should mention 'decision'\n" +
   "- Start/End -> role should mention 'terminal'\n" +
-  "- Actions/processes -> role should mention 'process'\n\n" +
+  "- Actions/processes -> role should mention 'process'\n" +
+  "- Servers/Infrastructure -> role should mention 'server'\n" +
+  "- Clients/Browsers/UIs -> role should mention 'client'\n" +
+  "- Cloud/Internet/Network -> role should mention 'cloud'\n" +
+  "- Databases/Storage -> role should mention 'database'\n" +
+  "- Services/Microservices/Modules -> role should mention 'service'\n" +
+  "- Queues/Buffers/Message Brokers -> role should mention 'queue'\n\n" +
   "After your analysis, output your findings inside <RESULT> tags as JSON:\n" +
   "<RESULT>\n" +
   "{\n" +
@@ -52,6 +58,8 @@ export const LAYOUT_PROMPT =
   "- SIBLING LAYOUT: When a node connects to 2+ children of equal importance (e.g., Backend -> Database + Auth), " +
   "place them SIDE-BY-SIDE on the SAME ROW with different columns (e.g., Database at col -1, Auth at col 1) " +
   "so they flank the parent symmetrically. Do NOT stack siblings vertically unless there is a sequential dependency.\n" +
+  "- PROXIMITY RULE: If a node (e.g. Network, Security) connects to multiple vertical layers (e.g. Frontend AND Backend), " +
+  "place it to the SIDE (col 1 or -1) of those layers instead of pushing it to the very bottom, to prevent lines crossing through unrelated nodes.\n" +
   "- Ensure no two nodes occupy the exact same (row, col) unless intended to overlap.\n\n" +
   "=== COLOR PALETTE RULES ===\n" +
   "Use a PROFESSIONAL, modern color scheme. DO NOT use washed-out pastels like #E8F5E9, #BBDEFB, #FFF9C4.\n" +
@@ -113,14 +121,23 @@ export const EXECUTE_PROMPT =
   "DO NOT waste steps doing 1 operation at a time. Batch efficiently!\n\n" +
   "=== AVAILABLE TOOLS ===\n" +
   "add_node: { type, content, tag, x, y, width, height, backgroundColor, borderColor, textColor }\n" +
-  "  - type values: box, rectangle, pill, diamond, cylinder, database, cloud, server, terminator\n" +
-  "  - SHAPE RULES:\n" +
+  "  - type values: box, pill, diamond, database, cloud, server, browser, cylinder, component, queue, document, mobile\n" +
+  "  - SHAPE RULES (use the MOST SEMANTICALLY APPROPRIATE shape for each entity):\n" +
   "    * Decision/Condition nodes MUST use type 'diamond'\n" +
-  "    * Start/End nodes MUST use type 'pill'\n" +
-  "    * Process/Action nodes use type 'box' (or 'rectangle' for smaller 130x50 shapes)\n" +
+  "    * Start/End/Terminal nodes MUST use type 'pill'\n" +
+  "    * Database/Storage nodes MUST use type 'database'\n" +
+  "    * Cloud/Internet/Network/CDN nodes -> use type 'cloud'\n" +
+  "    * Server/Infrastructure/Host nodes -> use type 'server'\n" +
+  "    * Client/Browser/Web UI nodes -> use type 'browser'\n" +
+  "    * Queue/Message Broker/Buffer nodes -> use type 'cylinder' or 'queue'\n" +
+  "    * Service/Microservice/Module nodes -> use type 'component'\n" +
+  "    * Mobile/App nodes -> use type 'mobile'\n" +
+  "    * API/Gateway/Interface nodes -> use type 'rounded-rect'\n" +
+  "    * Generic process/action nodes -> use type 'box'\n" +
+  "    DO NOT default everything to 'box'. Use visually distinct shapes to make diagrams informative and engaging.\n" +
   "  - content MUST be non-empty (the visible label text)\n" +
   "  - x, y are the top-left pixel position calculated from row/col\n" +
-  "  - DIMENSIONS: Default is width=160, height=60. BUT for 'pill', 'terminator', and 'rectangle' use width=130, height=50\n\n" +
+  "  - DIMENSIONS: Default is width=160, height=60. BUT for 'pill' use width=130, height=50\n\n" +
   "connect_nodes: { sourceId, targetId, label, lineStyle, arrowHead, routing }\n" +
   "  - sourceId: ID of the source node (use $$NEW_N$$ for newly created nodes)\n" +
   "  - targetId: ID of the target node\n" +

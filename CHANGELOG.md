@@ -2,6 +2,14 @@
 
 All notable changes to the "arqulat-arc-extension" extension will be documented in this file.
 
+## [0.2.4]
+### Fixed
+- Synced AI prompts with the core backend to include the 'PROXIMITY RULE' for smarter side-placement of cross-cutting layers (Network, Security).
+- Synced node shape rules to properly enforce the 'database' type for database entities to prevent fallback to generic rectangles.
+- Updated canvas applicator to correctly render 'terminator' types as 'pill' shapes.
+- Standardized AI diagram connector lines to use a subtle palette of blue-grey shades instead of randomly colored hues.
+- Fixed dimension auto-sizing calculation for smaller shapes (like 130x50) to prevent forced padding stretching.
+
 ## [0.2.3]
 ### Fixed
 - Updated the activity bar sidebar icon to match the official Arqulat Arc logo precisely.
