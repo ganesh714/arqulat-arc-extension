@@ -1,6 +1,12 @@
 # Change Log
 
 All notable changes to the "arqulat-arc-extension" extension will be documented in this file.
+## [0.2.5]
+### Fixed
+- Fixed the shape vocabulary in the extension sidebar's instruction builder. Previously, it defaulted to sending only basic shapes to Copilot/Gemini (`box`, `database`, `pill`, `diamond`). It now properly requests the full rich UI library (e.g., `cloud`, `server`, `browser`, `component`, `cylinder`, `mobile`, `document`, `rounded-rect`).
+- Synced the AI diagram generation shape prompts between the web app backend and the VS Code extension so both produce consistent, highly-visual architectures rather than defaulting to generic rectangles.
+- The `mapNodeTypeAlias` mapping logic in `nodeTypeMapper.ts` was expanded to cleanly resolve over 40 LLM-hallucinated aliases (e.g., `internet` → `cloud`, `host` → `server`, `webapp` → `browser`) into appropriate native shape types.
+
 
 ## [0.2.4]
 ### Fixed
