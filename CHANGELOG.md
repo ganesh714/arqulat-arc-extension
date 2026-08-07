@@ -1,6 +1,19 @@
 # Change Log
 
 All notable changes to the "arqulat-arc-extension" extension will be documented in this file.
+
+## [0.2.8]
+### Fixed
+- **Fixed window freeze on preview:** The markdown preview now skips the expensive Dagre auto-layout pass when nodes already carry x/y positions (as all AI-generated diagrams do). Layout only runs for diagrams that explicitly have no positions.
+- **Simplified diagram sizing:** Replaced JS-button zoom controls (which required unreliable preview scripts) with pure CSS `transform: scale()` computed at render time. Diagrams auto-scale to fit a 900px-wide preview pane — no buttons, no JS, no CSP issues.
+- **Fixed empty diagram guard:** Added a safety check that renders a friendly error message if a diagram has no renderable nodes (e.g., edge-only blocks).
+
+## [0.2.7]
+### Fixed
+- Fixed CSP (Content Security Policy) violation in markdown preview: replaced all inline `onclick` handlers and `<script>` tags with `data-arc-*` attribute-based event delegation.
+- Added `media/arc-preview.js` as a registered `contributes.markdown.previewScripts` entry so it loads with the correct nonce in VS Code's CSP-protected preview, enabling the Fit / 100% / + / − zoom controls to work properly.
+- Resolved the "Executing inline script violates CSP" and "Some content has been disabled" warnings in the markdown preview panel.
+
 ## [0.2.6]
 ### Added
 - Implemented a "zoom-to-fit" responsive wrapper around the markdown preview diagrams. The diagram now automatically scales to fit within the editor's width on first load.

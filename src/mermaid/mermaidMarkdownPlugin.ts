@@ -26,7 +26,13 @@ export function activate(context: vscode.ExtensionContext) {
                 const parsed = JSON.parse(code);
                 // The new native format uses a "nodes" array directly
                 if (parsed.nodes && Array.isArray(parsed.nodes)) {
-                  const layoutedNodes = autoLayoutNodes(parsed.nodes);
+                  // Only run dagre layout if nodes don't already have valid positions
+                  // (AI-generated diagrams already carry x/y, so skip the expensive layout pass)
+                  const hasPositions = parsed.nodes.some((n: any) =>
+                    !['arrow', 'line', 'custom-connector'].includes(n.type) &&
+                    (n.position?.x !== 0 || n.position?.y !== 0)
+                  );
+                  const layoutedNodes = hasPositions ? parsed.nodes : autoLayoutNodes(parsed.nodes);
                   return renderDiagramHtml(layoutedNodes);
                 }
               }
