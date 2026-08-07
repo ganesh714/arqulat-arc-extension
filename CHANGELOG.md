@@ -1,6 +1,12 @@
 # Change Log
 
 All notable changes to the "arqulat-arc-extension" extension will be documented in this file.
+## [0.2.6]
+### Added
+- Implemented a "zoom-to-fit" responsive wrapper around the markdown preview diagrams. The diagram now automatically scales to fit within the editor's width on first load.
+- Added interactive zoom controls (Fit, 100%, Zoom In, Zoom Out) directly embedded within the `arqulat-arc` diagram preview for easier inspection of large architectures.
+- The diagram is now rendered internally at native resolution and scaled using CSS transforms, ensuring crisp text and borders at any zoom level without pixelation.
+
 ## [0.2.5]
 ### Fixed
 - Fixed the shape vocabulary in the extension sidebar's instruction builder. Previously, it defaulted to sending only basic shapes to Copilot/Gemini (`box`, `database`, `pill`, `diamond`). It now properly requests the full rich UI library (e.g., `cloud`, `server`, `browser`, `component`, `cylinder`, `mobile`, `document`, `rounded-rect`).

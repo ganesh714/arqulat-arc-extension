@@ -2,7 +2,7 @@
   "name": "arqulat-arc-extension",
   "displayName": "Arqulat Arc",
   "description": "One-Click Architecture Mapper — works with any VS Code chat agent",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "publisher": "arqulat",
   "repository": {
     "type": "git",
