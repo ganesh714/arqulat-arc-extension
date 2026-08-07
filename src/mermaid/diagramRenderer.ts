@@ -579,26 +579,121 @@ export function renderDiagramHtml(nodes: DiagramNode[]): string {
 
   const edgesSvg = renderEdges(shifted);
 
-  return `<div class="arqulat-arc-diagram" style="
+  const uid = `arc_${Math.random().toString(36).slice(2, 9)}`;
+
+  return `<div class="arqulat-arc-wrapper" id="${uid}_wrap" style="
     position: relative;
-    width: ${width}px;
-    height: ${height}px;
+    width: 100%;
+    max-height: 480px;
+    overflow: hidden;
     background: #0d1117;
     border: 1px solid #21262d;
     border-radius: 8px;
-    overflow: auto;
     margin: 16px 0;
     font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
   ">
-    <svg style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
-      <defs>${edgesSvg.includes('<marker') ? '' : ''}</defs>
-      ${edgesSvg}
-    </svg>
-    <div style="position: relative; z-index: 2;">
-      ${nodesHtml}
+    <!-- Zoom Controls Bar -->
+    <div style="
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(13,17,23,0.85);
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 3px 6px;
+      backdrop-filter: blur(4px);
+    ">
+      <button onclick="(function(){
+        var w = document.getElementById('${uid}_wrap');
+        var c = document.getElementById('${uid}_canvas');
+        var nw = ${width}; var nh = ${height};
+        var scl = Math.min((w.clientWidth - 16) / nw, (480 - 16) / nh, 1);
+        c.style.transform = 'scale(' + scl + ')';
+        c.style.transformOrigin = 'top left';
+        w.style.maxHeight = (nh * scl + 40) + 'px';
+        document.getElementById('${uid}_zoom_label').textContent = Math.round(scl * 100) + '%';
+      })()" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:11px;padding:2px 5px;border-radius:3px;" title="Fit to view">Fit</button>
+      <button onclick="(function(){
+        var c = document.getElementById('${uid}_canvas');
+        var w = document.getElementById('${uid}_wrap');
+        c.style.transform = 'scale(1)';
+        c.style.transformOrigin = 'top left';
+        w.style.maxHeight = '480px';
+        w.style.overflow = 'auto';
+        document.getElementById('${uid}_zoom_label').textContent = '100%';
+      })()" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:11px;padding:2px 5px;border-radius:3px;" title="100%">100%</button>
+      <button onclick="(function(){
+        var c = document.getElementById('${uid}_canvas');
+        var w = document.getElementById('${uid}_wrap');
+        var cur = parseFloat(c.dataset.scale || '1');
+        var s = Math.min(cur + 0.1, 3);
+        c.style.transform = 'scale(' + s + ')';
+        c.style.transformOrigin = 'top left';
+        c.dataset.scale = String(s);
+        w.style.maxHeight = (${height} * s + 40) + 'px';
+        w.style.overflow = 'auto';
+        document.getElementById('${uid}_zoom_label').textContent = Math.round(s * 100) + '%';
+      })()" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:13px;padding:2px 5px;border-radius:3px;font-weight:600;" title="Zoom in">+</button>
+      <span id="${uid}_zoom_label" style="color:#8b949e;font-size:11px;min-width:30px;text-align:center;"></span>
+      <button onclick="(function(){
+        var c = document.getElementById('${uid}_canvas');
+        var w = document.getElementById('${uid}_wrap');
+        var cur = parseFloat(c.dataset.scale || '1');
+        var s = Math.max(cur - 0.1, 0.2);
+        c.style.transform = 'scale(' + s + ')';
+        c.style.transformOrigin = 'top left';
+        c.dataset.scale = String(s);
+        w.style.maxHeight = (${height} * s + 40) + 'px';
+        document.getElementById('${uid}_zoom_label').textContent = Math.round(s * 100) + '%';
+      })()" style="background:none;border:none;color:#8b949e;cursor:pointer;font-size:13px;padding:2px 5px;border-radius:3px;font-weight:600;" title="Zoom out">−</button>
     </div>
-    <div style="position: absolute; bottom: 6px; right: 10px; font-size: 9px; color: #484f58; font-family: monospace;">
-      powered by Arqulat Arc
+
+    <!-- Scrollable Canvas Area -->
+    <div style="width:100%;height:100%;overflow:auto;">
+      <!-- Native-resolution canvas, scaled via JS on load -->
+      <div id="${uid}_canvas" style="
+        position: relative;
+        width: ${width}px;
+        height: ${height}px;
+        transform-origin: top left;
+      ">
+        <svg style="position:absolute;top:0;left:0;width:${width}px;height:${height}px;pointer-events:none;z-index:1;">
+          ${edgesSvg}
+        </svg>
+        <div style="position:relative;z-index:2;">
+          ${nodesHtml}
+        </div>
+        <div style="position:absolute;bottom:6px;right:10px;font-size:9px;color:#484f58;font-family:monospace;">
+          powered by Arqulat Arc
+        </div>
+      </div>
     </div>
-  </div>`;
+  </div>
+  <script>
+    (function() {
+      var wrap = document.getElementById('${uid}_wrap');
+      var canvas = document.getElementById('${uid}_canvas');
+      var label = document.getElementById('${uid}_zoom_label');
+      if (!wrap || !canvas) { return; }
+      var nw = ${width}, nh = ${height};
+      function fitToView() {
+        var availW = wrap.clientWidth - 16;
+        var availH = 440;
+        var scl = Math.min(availW / nw, availH / nh, 1);
+        scl = Math.round(scl * 100) / 100;
+        canvas.style.transform = 'scale(' + scl + ')';
+        canvas.style.transformOrigin = 'top left';
+        wrap.style.maxHeight = Math.ceil(nh * scl + 24) + 'px';
+        canvas.dataset.scale = String(scl);
+        if (label) { label.textContent = Math.round(scl * 100) + '%'; }
+      }
+      fitToView();
+    })();
+  </script>`;
 }
+
+
