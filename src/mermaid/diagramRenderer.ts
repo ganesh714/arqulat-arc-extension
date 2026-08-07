@@ -619,6 +619,9 @@ export function renderDiagramHtml(nodes: DiagramNode[]): string {
         powered by Arqulat Arc
       </div>
     </div>
+    <div style="position:absolute;top:8px;right:10px;z-index:10;background:rgba(13,17,23,0.85);border:1px solid #30363d;border-radius:6px;padding:3px 8px;font-size:11px;color:#8b949e;font-family:monospace;">
+      ${Math.round(scale * 100)}%
+    </div>
   </div>`;
 }
 
