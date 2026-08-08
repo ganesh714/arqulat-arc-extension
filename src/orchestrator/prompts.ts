@@ -54,13 +54,33 @@ export const LAYOUT_PROMPT =
   "Think step by step in natural language:\n" +
   "- What is the primary flow of the diagram? (e.g., top-to-bottom for flowcharts)\n" +
   "- Assign a specific `row` and `col` integer index to EVERY entity.\n" +
-  "  * E.g., for an if-else ladder, the main condition path might go down (col 0, rows 0, 1, 2) while the 'True' branches branch out horizontally (col 1, rows 0, 1, 2).\n" +
-  "- SIBLING LAYOUT: When a node connects to 2+ children of equal importance (e.g., Backend -> Database + Auth), " +
-  "place them SIDE-BY-SIDE on the SAME ROW with different columns (e.g., Database at col -1, Auth at col 1) " +
-  "so they flank the parent symmetrically. Do NOT stack siblings vertically unless there is a sequential dependency.\n" +
+  "  * E.g., for an if-else ladder, the main condition path might go down (col 0, rows 0, 1, 2) while the 'True' branches branch out horizontally (col 1, rows 0, 1, 2).\n\n" +
+  "=== SYMMETRIC TREE LAYOUT (CRITICAL) ===\n" +
+  "When a parent node connects to multiple children, arrange them as a BALANCED TREE, NOT a flat horizontal row.\n\n" +
+  "RULES:\n" +
+  "- 2 children: Place side-by-side on the NEXT ROW, symmetric around the parent's column.\n" +
+  "  Example: Parent at (row 1, col 0) → Child A at (row 2, col -1), Child B at (row 2, col 1)\n\n" +
+  "- 3 children: Place the most important one directly below the parent, and flank the other two on the sides.\n" +
+  "  Example: Parent at (row 1, col 0) → Child A at (row 2, col -1), Child B at (row 2, col 0), Child C at (row 2, col 1)\n\n" +
+  "- 4+ children: Split into TWO ROWS. Place 2 on each row, symmetric.\n" +
+  "  Example: Parent at (row 1, col 0) → A at (row 2, col -1), B at (row 2, col 1), C at (row 3, col -1), D at (row 3, col 1)\n\n" +
+  "- NEVER dump all children on a single horizontal row. This creates ugly, flat layouts with long crossing lines.\n\n" +
+  "- CROSS-CUTTING NODES (e.g. Cache, Security, Logging): If a node connects to a parent but is conceptually \"alongside\" it " +
+  "(not truly a child), place it at the SAME ROW as the parent but offset to the side (col +2 or -2). " +
+  "Do NOT push it down into the children rows.\n\n" +
   "- PROXIMITY RULE: If a node (e.g. Network, Security) connects to multiple vertical layers (e.g. Frontend AND Backend), " +
-  "place it to the SIDE (col 1 or -1) of those layers instead of pushing it to the very bottom, to prevent lines crossing through unrelated nodes.\n" +
+  "place it to the SIDE (col 2 or -2) of those layers instead of pushing it to the very bottom, to prevent lines crossing through unrelated nodes.\n\n" +
   "- Ensure no two nodes occupy the exact same (row, col) unless intended to overlap.\n\n" +
+  "=== ARCHITECTURE LAYOUT EXAMPLE ===\n" +
+  "For: Client App → API Gateway → Auth Service → {External IdP, User Database, SMTP/Email}, Auth Service → Redis Cache\n" +
+  "Good symmetric layout:\n" +
+  "  Client App:     row 0, col 0  (top center)\n" +
+  "  API Gateway:    row 1, col 0  (below client, centered)\n" +
+  "  Auth Service:   row 2, col 0  (below gateway, centered)\n" +
+  "  External IdP:   row 3, col -1 (left child)\n" +
+  "  User Database:  row 4, col -1 (bottom-left, below IdP)\n" +
+  "  SMTP/Email:     row 4, col 1  (bottom-right, mirrors DB)\n" +
+  "  Redis Cache:    row 3, col 2  (side placement, same level as IdP but offset)\n\n" +
   "=== COLOR PALETTE RULES ===\n" +
   "Use a PROFESSIONAL, modern color scheme. DO NOT use washed-out pastels like #E8F5E9, #BBDEFB, #FFF9C4.\n" +
   "Instead, use rich, saturated colors with good contrast:\n" +
@@ -82,14 +102,14 @@ export const LAYOUT_PROMPT =
   '    { "entity": "Action1", "row": 1, "col": 1 }\n' +
   "  ],\n" +
   '  "gridMetrics": { "columnWidth": 240, "rowHeight": 120 },\n' +
-  '  "nodeDefaults": { "width": 160, "height": 60 },\n' +
+  '  "nodeDefaults": { "width": 130, "height": 40 },\n' +
   '  "colorPalette": {\n' +
   '    "Primary": { "bg": "#1a1a2e", "border": "#16213e", "text": "#ffffff" }\n' +
   "  },\n" +
-  '  "styleHints": "Decision nodes use type \'rhombus\'."\n' +
+  '  "styleHints": "Decision nodes use type \'diamond\'."\n' +
   "}\n" +
   "</RESULT>\n\n" +
-  "IMPORTANT: Think thoroughly about the (row, col) coordinates to avoid overlaps and create a clean flow. " +
+  "IMPORTANT: Think thoroughly about the (row, col) coordinates to avoid overlaps and create a clean, SYMMETRIC flow. " +
   "Your reasoning before <RESULT> is crucial.";
 
 export const EXECUTE_PROMPT =
@@ -121,7 +141,7 @@ export const EXECUTE_PROMPT =
   "DO NOT waste steps doing 1 operation at a time. Batch efficiently!\n\n" +
   "=== AVAILABLE TOOLS ===\n" +
   "add_node: { type, content, tag, x, y, width, height, backgroundColor, borderColor, textColor }\n" +
-  "  - type values: box, pill, diamond, database, cloud, server, browser, cylinder, component, queue, document, mobile\n" +
+  "  - type values: box, pill, diamond, database, cloud, server, browser, cylinder, component, queue, document, mobile, rounded-rect\n" +
   "  - SHAPE RULES (use the MOST SEMANTICALLY APPROPRIATE shape for each entity):\n" +
   "    * Decision/Condition nodes MUST use type 'diamond'\n" +
   "    * Start/End/Terminal nodes MUST use type 'pill'\n" +
@@ -129,15 +149,30 @@ export const EXECUTE_PROMPT =
   "    * Cloud/Internet/Network/CDN nodes -> use type 'cloud'\n" +
   "    * Server/Infrastructure/Host nodes -> use type 'server'\n" +
   "    * Client/Browser/Web UI nodes -> use type 'browser'\n" +
-  "    * Queue/Message Broker/Buffer nodes -> use type 'cylinder' or 'queue'\n" +
+  "    * Queue/Message Broker/Buffer nodes -> use type 'queue'\n" +
   "    * Service/Microservice/Module nodes -> use type 'component'\n" +
   "    * Mobile/App nodes -> use type 'mobile'\n" +
   "    * API/Gateway/Interface nodes -> use type 'rounded-rect'\n" +
   "    * Generic process/action nodes -> use type 'box'\n" +
   "    DO NOT default everything to 'box'. Use visually distinct shapes to make diagrams informative and engaging.\n" +
-  "  - content MUST be non-empty (the visible label text)\n" +
-  "  - x, y are the top-left pixel position calculated from row/col\n" +
-  "  - DIMENSIONS: Default is width=160, height=60. BUT for 'pill' use width=130, height=50\n\n" +
+  "  - MULTI-LINE CONTENT: If a node's label is long, DO NOT make the node excessively wide. Instead, insert `\\n` to break the text into 2 or more lines (e.g. 'API Gateway\\nin Auth Service') for a beautiful, compact appearance.\n" +
+  "  - x, y are the top-left pixel position calculated from row/col\n\n" +
+  "=== DEFAULT NODE SIZES (MATCH ARC WEB APP EXACTLY) ===\n" +
+  "Use these exact sizes to keep diagrams consistent with the Arc canvas:\n" +
+  "  - box:           width=130, height=40 (add +15 height per extra \\n line)\n" +
+  "  - rounded-rect:  width=130, height=40 (add +15 height per extra \\n line)\n" +
+  "  - pill:          width=130, height=40\n" +
+  "  - terminator:    width=130, height=40\n" +
+  "  - diamond:       width=120, height=80\n" +
+  "  - database:      width=100, height=70\n" +
+  "  - server:        width=100, height=70\n" +
+  "  - cloud:         width=120, height=70\n" +
+  "  - browser:       width=120, height=80\n" +
+  "  - component:     width=130, height=50\n" +
+  "  - queue:         width=130, height=50\n" +
+  "  - mobile:        width=70,  height=110\n" +
+  "  - circle:        width=80,  height=80\n" +
+  "  - document:      width=130, height=60\n\n" +
   "connect_nodes: { sourceId, targetId, label, lineStyle, arrowHead, routing }\n" +
   "  - sourceId: ID of the source node (use $$NEW_N$$ for newly created nodes)\n" +
   "  - targetId: ID of the target node\n" +
@@ -153,15 +188,15 @@ export const EXECUTE_PROMPT =
   "delete_node: { nodeId }\n" +
   "disconnect_nodes: { edgeId }\n\n" +
   "=== COMPLETE EXAMPLE (if-else) ===\n" +
-  'For Start -> Condition --True--> Action ---> End, Condition --False--> End:\n' +
+  "For Start -> Condition --True--> Action ---> End, Condition --False--> End:\n" +
   "{\n" +
   '  "explanation": "Creating nodes and connectors for conditional flow",\n' +
   '  "isDone": true,\n' +
   '  "toolCalls": [\n' +
-  '    { "tool": "add_node", "args": { "type": "pill", "content": "Start", "x": 0, "y": 0, "width": 130, "height": 50, "backgroundColor": "#E8F5E9", "borderColor": "#43A047" } },\n' +
-  '    { "tool": "add_node", "args": { "type": "diamond", "content": "Condition?", "x": 0, "y": 120, "width": 160, "height": 60, "backgroundColor": "#FFF3E0", "borderColor": "#E65100" } },\n' +
-  '    { "tool": "add_node", "args": { "type": "box", "content": "Action", "x": 240, "y": 120, "width": 160, "height": 60 } },\n' +
-  '    { "tool": "add_node", "args": { "type": "pill", "content": "End", "x": 0, "y": 240, "width": 130, "height": 50 } },\n' +
+  '    { "tool": "add_node", "args": { "type": "pill", "content": "Start", "x": 0, "y": 0, "width": 130, "height": 40, "backgroundColor": "#1b5e20", "borderColor": "#43A047", "textColor": "#ffffff" } },\n' +
+  '    { "tool": "add_node", "args": { "type": "diamond", "content": "Condition?", "x": 0, "y": 120, "width": 120, "height": 80, "backgroundColor": "#4a148c", "borderColor": "#7B1FA2", "textColor": "#ffffff" } },\n' +
+  '    { "tool": "add_node", "args": { "type": "box", "content": "Action", "x": 240, "y": 140, "width": 130, "height": 40, "backgroundColor": "#0d47a1", "borderColor": "#1565c0", "textColor": "#ffffff" } },\n' +
+  '    { "tool": "add_node", "args": { "type": "pill", "content": "End", "x": 0, "y": 260, "width": 130, "height": 40, "backgroundColor": "#b71c1c", "borderColor": "#c62828", "textColor": "#ffffff" } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_0$$", "targetId": "$$NEW_1$$", "routing": "elbow", "arrowHead": "filled" } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_1$$", "targetId": "$$NEW_2$$", "label": "True", "routing": "elbow", "arrowHead": "filled" } },\n' +
   '    { "tool": "connect_nodes", "args": { "sourceId": "$$NEW_2$$", "targetId": "$$NEW_3$$", "routing": "elbow", "arrowHead": "filled" } },\n' +
@@ -172,8 +207,9 @@ export const EXECUTE_PROMPT =
   "- [ ] Every entity from the semantic blueprint has a node on canvas with non-empty content\n" +
   "- [ ] Every relationship from the semantic blueprint has a connector (connect_nodes) on canvas\n" +
   "- [ ] Nodes have proper colors from the layout plan's colorPalette\n" +
-  "- [ ] Decision nodes use type 'rhombus' or 'diamond'\n" +
-  "- [ ] Start/End nodes use type 'capsule' or 'terminator'\n" +
+  "- [ ] Decision nodes use type 'diamond'\n" +
+  "- [ ] Start/End nodes use type 'pill'\n" +
+  "- [ ] Node sizes match the DEFAULT NODE SIZES table above\n" +
   "If ANY of these are missing, DO NOT set isDone=true.\n\n" +
   "OUTPUT FORMAT:\n" +
   "{\n" +

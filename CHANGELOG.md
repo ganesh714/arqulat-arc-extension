@@ -2,6 +2,35 @@
 
 All notable changes to the "arqulat-arc-extension" extension will be documented in this file.
 
+## [0.2.10]
+### Added
+- **Draggable middle segment for elbow connectors:** In the webview canvas, the middle segment of any 3-segment elbow connector now displays a visual drag handle when selected. Dragging this handle moves both internal waypoints simultaneously along a constrained axis, allowing users to cleanly adjust where the connector bends while maintaining perfect right angles (no diagonal breaks).
+
+### Fixed
+- **Multi-line node content in diagram preview:** The extension's Markdown preview renderer now correctly handles `\n` newline characters in node content, matching the web app's behaviour exactly. Previously, `\n` in content was silently dropped and the text was rendered on a single line. Now it produces a `<br>` line break, so nodes with multi-line labels display correctly.
+- **Inline markdown in node content:** The fix also brings full parity with the web app's `parseMarkdown()` function — `**bold**`, `*italic*`, and `` `code` `` inline formatting are now rendered properly in the preview as well.
+
+### Improved
+- **Symmetric tree layout for AI-generated diagrams:** Completely rewrote the LAYOUT_PROMPT's sibling arrangement rules. Instead of dumping all children of a node on a single flat horizontal row, the AI now arranges them as a balanced tree — 2 children flanking symmetrically, 3 children in a centered fan, and 4+ children split across two rows. Cross-cutting nodes (e.g. Redis Cache, Logging) are now placed alongside their parent instead of being pushed to the bottom. Includes a concrete architecture example (Auth flow) to guide the LLM.
+- **Synced layout prompts:** Both the VS Code extension and the Arc web app backend now share the same updated symmetric tree layout rules.
+
+## [0.2.9]
+### Improved
+- **Corrected AI-generated node sizes to match Arc web app defaults:** The AI generation prompt now instructs the LLM to use the exact same default dimensions used by the Arc canvas. Nodes will no longer appear oversized or mismatched when transferred between the extension and the web app.
+  - `box`, `pill`, `rounded-rect`, `terminator` → **130 × 40 px**
+  - `diamond` → **120 × 80 px**
+  - `database`, `server` → **100 × 70 px**
+  - `cloud` → **120 × 70 px**
+  - `browser` → **120 × 80 px**
+  - `component`, `queue` → **130 × 50 px**
+  - `mobile` → **70 × 110 px**
+  - `circle` → **80 × 80 px**
+  - `document` → **130 × 60 px**
+- **Long label exception:** If a node's content text is long, width scales up proportionally (up to 220 px max) to prevent text clipping.
+- **Updated LAYOUT phase defaults:** The layout planning prompt's `nodeDefaults` now also reflects the correct 130 × 40 baseline, so row/column spacing is calculated more accurately.
+- **Improved example in generation prompt:** The built-in if/else example now demonstrates correct sizes and uses rich, saturated dark colors consistent with the color palette rules.
+- **Fixed checklist in prompt:** Removed references to legacy shape type names (`capsule`, `terminator`, `rhombus`) and replaced with the actual supported types (`pill`, `diamond`).
+
 ## [0.2.8]
 ### Fixed
 - **Fixed window freeze on preview:** The markdown preview now skips the expensive Dagre auto-layout pass when nodes already carry x/y positions (as all AI-generated diagrams do). Layout only runs for diagrams that explicitly have no positions.

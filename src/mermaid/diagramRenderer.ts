@@ -19,6 +19,36 @@ function esc(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+/**
+ * Mirrors the web app's parseMarkdown() from ShapeRenderers.tsx.
+ * Converts \n → <br>, **bold**, *italic*, `code` into HTML.
+ */
+function parseContent(text: string): string {
+  if (!text) return '';
+
+  // Split on inline markdown tokens, preserving them
+  const regex = /(\*\*.*?\*\*|\*.*?\*|`.*?`|_.*?_)/g;
+  const parts = text.split(regex);
+
+  return parts.map(part => {
+    if (!part) return '';
+
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return `<strong>${esc(part.slice(2, -2))}</strong>`;
+    } else if (
+      (part.startsWith('*') && part.endsWith('*')) ||
+      (part.startsWith('_') && part.endsWith('_'))
+    ) {
+      return `<em>${esc(part.slice(1, -1))}</em>`;
+    } else if (part.startsWith('`') && part.endsWith('`')) {
+      return `<code style="font-family:monospace;background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;font-size:90%">${esc(part.slice(1, -1))}</code>`;
+    } else {
+      // Plain text — escape and convert \n to <br>
+      return esc(part).replace(/\n/g, '<br>');
+    }
+  }).join('');
+}
+
 function getColors(node: DiagramNode) {
   const bg = node.style?.backgroundColor || '#2c2c2c';
   const border = node.style?.borderColor || '#555555';
@@ -34,7 +64,7 @@ function renderNode(node: DiagramNode): string {
   if (isEdge) { return ''; }
 
   const { bg, border, text, borderStyle } = getColors(node);
-  const content = esc(node.content || '');
+  const content = parseContent(node.content || '');
   const w = node.dimensions.width;
   const h = node.dimensions.height;
   const x = node.position.x;
